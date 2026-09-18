@@ -28,7 +28,6 @@ jobs:
           brew install bats-core
       - name: INSTALL bats-libraries
         run: |
-          brew tap bats-core/bats-core
           brew install bats-support
           brew install bats-assert
           brew install bats-file
