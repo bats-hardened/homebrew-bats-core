@@ -1,0 +1,55 @@
+name: Update formula versions
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * 1"
+
+permissions: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      UPDATE_PR_TITLE: Update formula versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set branch names
+        id: branches
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            target_branch="$GITHUB_REF_NAME"
+          else
+            target_branch="$DEFAULT_BRANCH"
+          fi
+
+          echo "target=$target_branch" >> "$GITHUB_OUTPUT"
+          echo "update=update-formula-versions/$target_branch" >> "$GITHUB_OUTPUT"
+
+      - name: Update versions and checksums
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./update-versions.sh
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ github.token }}
+          sign-commits: true
+          commit-message: ${{ env.UPDATE_PR_TITLE }}
+          branch: ${{ steps.branches.outputs.update }}
+          delete-branch: true
+          base: ${{ steps.branches.outputs.target }}
+          title: ${{ env.UPDATE_PR_TITLE }}
+          body: Updates Bats libraries to their latest release tags and refreshes their SHA-256 checksums.
+          add-paths: Formula/*.rb
