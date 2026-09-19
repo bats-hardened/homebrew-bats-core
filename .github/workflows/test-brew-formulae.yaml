@@ -26,7 +26,7 @@ jobs:
         run: brew --version
       - name: INSTALL bats-core
         run: |
-          brew list bats && brew uninstall bats || echo "bats is not present"
+          brew list bats 2>/dev/null && brew uninstall bats
           brew install bats-core
       - name: INSTALL bats-support
         if: ${{ env.PACKAGE == 'bats-assert' || env.PACKAGE == 'bats-file' }}
